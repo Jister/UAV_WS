@@ -44,3 +44,11 @@ target_link_libraries(scan_projector
   ${catkin_LIBRARIES}
 )
 
+add_executable(odom_transform 
+  src/odom_transform.cpp
+)
+
+target_link_libraries(odom_transform 
+  ${catkin_LIBRARIES}
+)
+
