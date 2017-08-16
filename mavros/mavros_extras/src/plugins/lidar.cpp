@@ -35,13 +35,13 @@ class LidarPlugin : public MavRosPlugin{
 public:
 	LidarPlugin() :
 		sp_nh("~lidar"),
-		uas(nullptr),
+		uas(nullptr)
 	{ };
 
 	void initialize(UAS &uas_)
 	{
 		uas = &uas_;
-		lidar_sub = sp_nh.subscribe("lidar", 10, &LidarPlugin::lidar_cb, this);
+		lidar_sub = sp_nh.subscribe("range", 10, &LidarPlugin::lidar_cb, this);
 	}
 
 	const message_map get_rx_handlers() {
@@ -79,7 +79,7 @@ private:
 	void lidar_cb(const sensor_msgs::Range::ConstPtr &msg) {
 		uint8_t type = MAV_DISTANCE_SENSOR_LASER;
 		uint8_t covariance = 0.1;
-		uint8_t id = 3;
+		uint8_t sensor_id = 3;
 		int orientation = MAV_SENSOR_ROTATION_ROLL_180;
 
 		distance_sensor(

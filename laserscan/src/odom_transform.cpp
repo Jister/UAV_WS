@@ -3,6 +3,7 @@
 #include "geometry_msgs/PoseStamped.h"
 #include "geometry_msgs/PoseWithCovarianceStamped.h"
 #include "geometry_msgs/Pose2D.h"
+#include "geometry_msgs/Quaternion.h"
 #include "sensor_msgs/Range.h"
 #include "tf/transform_listener.h"
 #include "tf/transform_broadcaster.h"
@@ -19,6 +20,7 @@ public:
 private:
 	ros::NodeHandle n;
 	ros::Subscriber odom_sub;
+	ros::Subscriber lidar_sub;
 	ros::Publisher vision_pub;	
 
 	bool imu_init;
@@ -28,13 +30,14 @@ private:
 	double distance;
 
 	void poseCallback(const geometry_msgs::Pose2D &msg);
-	void distanceCallback(const sensor_msgs::Range &msg);
+	void lidarCallback(const sensor_msgs::Range &msg);
 	//void rotate(float theta,  const Vector3f& input,  Vector3f& output);
 };
 
 OdomTransform::OdomTransform()
 {
 	odom_sub = n.subscribe("/pose2D", 1, &OdomTransform::poseCallback, this);
+	lidar_sub = n.subscribe("/mavros/lidar/range", 1, &OdomTransform::lidarCallback, this);
 	vision_pub = n.advertise<geometry_msgs::PoseStamped >("/mavros/vision_pose/pose", 1);
 	// imu_init = false;
 	// roll = 0;
@@ -45,17 +48,15 @@ OdomTransform::OdomTransform()
 
 void OdomTransform::poseCallback(const geometry_msgs::Pose2D &msg)
 {
-	if(imu_init)
-	{
-		tf::Quaternion laser_world_q = tf::createQuaternionFromYaw(msg.theta);
-		geometry_msgs::PoseStamped  pos;
-		pos.header.stamp = ros::Time::now();
+	geometry_msgs::Quaternion laser_world_q = tf::createQuaternionMsgFromYaw(msg.theta);
+	geometry_msgs::PoseStamped  pos;
+	pos.header.stamp = ros::Time::now();
 
-		pos.pose.position.x = msg.x;
-		pos.pose.position.y = msg.y;
-		pos.pose.position.z = distance;
-		vision_pub.publish(pos);
-	}
+	pos.pose.position.x = msg.x;
+	pos.pose.position.y = msg.y;
+	pos.pose.position.z = distance;
+	pos.pose.orientation = laser_world_q;
+	vision_pub.publish(pos);
 
 }
 
@@ -71,7 +72,7 @@ void OdomTransform::poseCallback(const geometry_msgs::Pose2D &msg)
 // 	}
 // }
 
-void OdomTransform::distanceCallback(const sensor_msgs::Range &msg)
+void OdomTransform::lidarCallback(const sensor_msgs::Range &msg)
 {
 	distance = msg.range;
 }
