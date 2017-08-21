@@ -31,12 +31,13 @@ private:
 
 	void poseCallback(const geometry_msgs::Pose2D &msg);
 	void lidarCallback(const sensor_msgs::Range &msg);
+	void laserCallback(const geometry_msgs::PoseWithCovarianceStamped &msg);
 	//void rotate(float theta,  const Vector3f& input,  Vector3f& output);
 };
 
 OdomTransform::OdomTransform()
 {
-	odom_sub = n.subscribe("/pose2D", 1, &OdomTransform::poseCallback, this);
+	odom_sub = n.subscribe("/amcl_pose", 1, &OdomTransform::laserCallback, this);
 	lidar_sub = n.subscribe("/mavros/lidar/range", 1, &OdomTransform::lidarCallback, this);
 	vision_pub = n.advertise<geometry_msgs::PoseStamped >("/mavros/vision_pose/pose", 1);
 	// imu_init = false;
@@ -57,7 +58,16 @@ void OdomTransform::poseCallback(const geometry_msgs::Pose2D &msg)
 	pos.pose.position.z = distance;
 	pos.pose.orientation = laser_world_q;
 	vision_pub.publish(pos);
+}
 
+void OdomTransform::laserCallback(const geometry_msgs::PoseWithCovarianceStamped &msg) {
+	geometry_msgs::PoseStamped  pos;
+	pos.header.stamp = ros::Time::now();
+	pos.pose.position.x = msg.pose.pose.position.x;
+	pos.pose.position.y = msg.pose.pose.position.y;
+	pos.pose.position.z = distance;
+	pos.pose.orientation = msg.pose.pose.orientation;
+	vision_pub.publish(pos);
 }
 
 // void OdomTransform::imuCallback(const sensor_msgs::Imu::ConstPtr& imu_msg)
